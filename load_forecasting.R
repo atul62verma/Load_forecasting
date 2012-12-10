@@ -3,7 +3,8 @@ file <- "./Data-GFS/temperature_forecasts.csv"
 raw.gfs <- read.csv(file, sep=",")
 #  head(raw.gfs)
 
-#  Perform transformations on data:
+
+#  Perform transformations on GFS data:
 #   - Convert text dates + times into date-times in the POSIXlt class
 gfs.issued.datetime <- strptime(raw.gfs[[1]], format="%m/%d/%y %I:%M %p", tz="GMT")
 gfs.valid.datetime  <- strptime(raw.gfs[[2]], format="%m/%d/%y %I:%M %p", tz="GMT")
