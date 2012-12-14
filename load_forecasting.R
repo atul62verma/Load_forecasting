@@ -29,32 +29,18 @@ gfs.names <- c("id_forecastDT", "id_site", "Temperature", "issuedAt", "validFor"
 str(gfs)
 names(gfs) <- gfs.names
 
-str(gfs)
-
 #  Reshape gfs data frame into "long" format
+gfs.molten <- melt(gfs, id=c("id_forecastDT")) 
 
+unique(gfs.molten$variable)
 
+test <- gfs.cast <- cast(gfs.molten, id_forecastDT ~ variable)
 
-gfs.by.issueTime <- gfs
-# gfs.by.issueTime[[1]] <- as.ts(gfs.by.issueTime$issuedAt)
-gfs.by.issueTime[[2]] <- as.factor(gfs$validFor - gfs$issuedAt)
-names(gfs.by.issueTime) <- c("issuedAt", "leadTimes", "Temperature")
+head(test)
 
-str(gfs.by.issueTime)
-summary(gfs.by.issueTime)
+#  Since for this application all forecasts correspond to the same spatial location
+#  (id_site==112, for NYC/LGA), we'll remove it to cut down on clutter.
 
-head(gfs.by.issueTime)
-mgfs <- melt(gfs.by.issueTime,
-             )
-
-
-temp <- c("Temperature")
-str(temp)
-temp
-temp2 <- "Temperature"
-str(temp2)
-temp2
-temp == temp2
 
 #  Reshape into wide tables
 temp <- reshape(gfs.by.issueTime, 
