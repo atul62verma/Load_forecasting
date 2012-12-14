@@ -4,23 +4,36 @@ library(reshape)    # Utilities for reshaping data frames and arrays
 library(reshape2)   # Utilities for reshaping data frames and arrays
 
 #  Load GFS forecast data
-file <- "./Data-GFS/temperature_forecasts_raw"
-raw.gfs <- read.csv(file, sep=",")
-
+file <- "./Data-GFS/temperature_forecasts_raw.csv"
 gfs <- raw.gfs <- read.csv(file, sep=",")
-head(raw.gfs)
-str(raw.gfs)
 
+str(raw.gfs)
+summary(raw.gfs)
+raw.gfs[100:120,5]
+strptime(raw.gfs[1,4], format="%Y-%m-%d %H:%M", tz="GMT")
 #  Perform transformations on GFS data:
-#   - Convert text dates + times into date-times in the POSIXt class
-# issuedAt <- strptime(raw.gfs[[1]], format="%m/%d/%y %I:%M %p", tz="GMT")
-# validFor  <- strptime(raw.gfs[[2]], format="%m/%d/%y %I:%M %p", tz="GMT")
-gfs[[1]] <- strptime(raw.gfs[[1]], format="%m/%d/%y %I:%M %p", tz="GMT")
-gfs[[2]] <- strptime(raw.gfs[[2]], format="%m/%d/%y %I:%M %p", tz="GMT")
+#    - Convert forecast temperatures from factor class to numeric class
 gfs[[3]] <- as.numeric(raw.gfs[[3]])
-names(gfs) <- c("issuedAt", "validFor", "Temperature")
+
+#   - Convert text dates + times into date-times in the POSIXlt class
+gfs[[4]] <- strptime(raw.gfs[[4]], format="%Y-%m-%d %H:%M", tz="GMT")
+gfs[[5]] <- strptime(raw.gfs[[5]], format="%Y-%m-%d %H:%M", tz="GMT")
+#      N.B. The time conversion is equivalent to this command:
+#         gfs[[colnum]] <- as.POSIXlt(raw.gfs[[colnum]], tz="GMT")
+#      However, the strptime() command runs much faster. (Reason: unknown).
+
+#  Create a new column of forecast lead times:
+gfs[[6]] <- as.factor(gfs[[5]] - gfs[[4]])
+
+gfs.names <- c("id_forecastDT", "id_site", "Temperature", "issuedAt", "validFor", "leadTime")
+str(gfs)
+names(gfs) <- gfs.names
 
 str(gfs)
+
+#  Reshape gfs data frame into "long" format
+
+
 
 gfs.by.issueTime <- gfs
 # gfs.by.issueTime[[1]] <- as.ts(gfs.by.issueTime$issuedAt)
