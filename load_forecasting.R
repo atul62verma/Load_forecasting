@@ -1,42 +1,45 @@
-library(forecast)   # Automated forecasting functions
-library(plyr)       # Allows use of the arrange() function for data sorting
+# library(forecast)   # Automated forecasting functions
+# library(plyr)       # Allows use of the arrange() function for data sorting
 library(reshape)    # Utilities for reshaping data frames and arrays
 library(reshape2)   # Utilities for reshaping data frames and arrays
+library(xts)
 
 #  Load GFS forecast data
 file <- "./Data-GFS/temperature_forecasts_raw.csv"
 gfs <- raw.gfs <- read.csv(file, sep=",")
 
-str(raw.gfs)
-summary(raw.gfs)
-raw.gfs[100:120,5]
-strptime(raw.gfs[1,4], format="%Y-%m-%d %H:%M", tz="GMT")
 #  Perform transformations on GFS data:
-#    - Convert forecast temperatures from factor class to numeric class
-gfs[[3]] <- as.numeric(raw.gfs[[3]])
-
 #   - Convert text dates + times into date-times in the POSIXlt class
+#   - Replace initial_datetime with new column of forecast lead/lag times
+#   - Convert forecast temperatures from factor class to numeric class
+#   - Reorder columns; add new column labels
 gfs[[4]] <- strptime(raw.gfs[[4]], format="%Y-%m-%d %H:%M", tz="GMT")
 gfs[[5]] <- strptime(raw.gfs[[5]], format="%Y-%m-%d %H:%M", tz="GMT")
-#      N.B. The time conversion is equivalent to this command:
-#         gfs[[colnum]] <- as.POSIXlt(raw.gfs[[colnum]], tz="GMT")
-#      However, the strptime() command runs much faster. (Reason: unknown).
+gfs[[2]] <- as.factor(gfs[[5]] - gfs[[4]])
+gfs[[1]] <- as.factor(raw.gfs[[5]])
+gfs <- gfs[,1:3]
 
-#  Create a new column of forecast lead times:
-gfs[[6]] <- as.factor(gfs[[5]] - gfs[[4]])
+names(gfs) <- c("validFor", "hoursAhead", "Temperature")
 
-gfs.names <- c("id_forecastDT", "id_site", "Temperature", "issuedAt", "validFor", "leadTime")
 str(gfs)
-names(gfs) <- gfs.names
+head(gfs)
+tail(gfs)
 
 #  Reshape gfs data frame into "long" format
-gfs.molten <- melt(gfs, id=c("id_forecastDT")) 
+gfs.molten <- melt(gfs, id=c("validFor","hoursAhead")) 
 
 unique(gfs.molten$variable)
 
-test <- gfs.cast <- cast(gfs.molten, id_forecastDT ~ variable)
+gfs.cast <- cast(gfs.molten, ... ~ hoursAhead)
 
-head(test)
+head(gfs.cast)
+str(gfs.cast)
+
+summary(gfs.cast)
+gfs.cast[1,]
+gfs.cast[101:110, ]
+head(gfs.cast)
+tail(gfs.cast)
 
 #  Since for this application all forecasts correspond to the same spatial location
 #  (id_site==112, for NYC/LGA), we'll remove it to cut down on clutter.
