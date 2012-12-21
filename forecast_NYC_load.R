@@ -4,98 +4,26 @@
 #  
 #  A program to estimate the structural relationships between temperature and
 #  electric power load for a single region, and to generate preditive
-#  distributions of electric power load. 
+#  distributions of electric power load. To be used as the basis for a planned
+#  demo in the form of a Shiny-based web app. 
 
 
-
-
-######## 	MODULE: INITIALIZE THE WORKSPACE #########
-
-#	This set-up module includes instructions that prepares R workspace to receive data and perform analysis
-
+# Initialize the workspace ------------------------------------------------
 library(forecast)
 
-#	INPUT: 	Basic identifying about the user and the project application. 
-#	RETURN: 	[Null]
-
-######   Define variables describing the project:
-#  In a fully built-out version of the code, an object containing basic
-#  identifying information about the user and the project application would be
-#  collected within a separate user-interface environment, and then passed to
-#  this module through a function call.
-#  For this demo, we simply define here a vector called ProjectID that contains the user name and the title of the project: 
 ProjectID = c("arthursmalliii","Power_load","NYC-temp+load-hourly-feb2005--may2008.csv")
 UserName =     ProjectID[1]
 ProjectName =  ProjectID[2]
 UserDateFile = ProjectID[3]
-
-######  Identify the main directory for files related to this project, and set
-#that as the working directory. We'll have a separate directory for each project
-#application. The path name for this directory incorporates identifying
-#information about the user and the project.
-#  DEMO:
-ProjectDirectory = paste("/Users",UserName,"Documents/Google Drive/Research_Projects/AIR/Use_cases",ProjectName,"AS-play-space", sep="/")
-
-#   Set this ProjectDirectory as the active working directory for the work to come: 
-setwd(ProjectDirectory)
-
-
-# 1. Retrieve and transform data ------------------------------------------------------
-
-
-
-######## 	MODULE: RETRIEVE USER'S OUTCOMES DATA AND META-DATA #########
-
-#	This module presents users with an interface, questionnaire, utility, or set of instructions 
-#	for uploading a data set, and describing its contents and format. 
-
-#	INPUT: 	Information about the user/project
-#	RETURN: 	Raw user data, meta-data, and optional preference parameters
-
-#	To transmit data: some possible scenarios:
-#		- User downloads a prepared spreadsheet file (e.g, Excel, OpenOffice), enters relevant data & meta-data, and uploads completed file.
-#		- User enters data and meta-data into a prepared web interface.
-#		- User enters data and meta-data into a Google Docs spreadsheet.
-#		- User uploads an ASCII flat file (e.g., .CSV) structured according to supplied instructions.
-
-#	Required meta-data will include:
-#		- Location: street address, Lat+Lon, or other descriptor
-#		- Frequency of time series: At first, allow just three options (may add others later):
-#			* Daily (e.g, ski lift tix sales)
-#			* Hourly (e.g., electricity load)
-#			* Time-stamped log data (e.g., 311 calls)
-#		- Date/time of first record
-#		- Names of outcomes variables/data fields (e.g., "Electricity load in New York City", "Type of complaint")
-#		- Units of measure for each data field
-#		- Indicator of subject domain, e.g., Retail/sales, Energy/electricity load, "Economic/other", "Public health"
-#		- (Possibly other data fields)
-
-#	Also: User will be invited to specify optional parameters concerning the process and output of the Meteolytica analysis
-#		- The forecast time horizon which is most important for the decision-maker (default = 1 day)
-
-######  Identify the directory containing the user's data:
-#  The tasks of creating user data directory (or directories) and uploading data files to
-#  them are assumed to have been handled already by some separate user-experience utility. 
-
-#  For this demo, we just give the flavor of what such code might look like.
-#  Note that this directory path incorporates user-specific variable UserName.
+#  Identify files containing the raw data
 UserDataDirectory = paste("/Users",UserName,"Dropbox/Research_Projects/Electricity-Load-Forecasting/Data", sep="/")
 UserDateFile = paste(UserDataDirectory,UserDateFile,sep="/")
 
-#####	DEMO: In this demo example, we simply read in user data (load) and weather data
-#         (temps) from a prepared .csv file and organize them in a data frame called "NYC.temp.load":
+
+# Retrieve and transform data ------------------------------------------------------
 NYC.temp.load <- read.table(UserDateFile, header = TRUE, sep = ",")
 
-# 	In general, the user data file would NOT contain weather obs or forecast information. 
-#	Instead, this selection of relevant meteorological explanatory variables would be itself
-#	an important analytic task, handled by separate computational sub-routines.
-
-######## 	MODULE: REFORMAT OUTCOMES DATA TO MAKE READY FOR ANALYSIS  #########
-#	INPUT: 	Raw user data and meta-data
-#	RETURN: A data frame, time series, or other class containing user data & meta-data, organized, reformatted, and ready for analysis
-
-#####	DEMO: Reformat date fields, extract required subset of load data series
-#	Convert the format of the dates from text to R's internal "Date" class
+#	Convert text dates into R's internal "Date" class
 NYC.temp.load$Date <- as.Date(NYC.temp.load$Date,'%m/%d/%Y')
 
 #  Check for missing values in the load series
@@ -124,9 +52,12 @@ plot(NYC.load.ts)
 NYC.load.ts[is.na(NYC.load.ts)]
 
 #  Create a load forecasting model using only the load time series
-NYC.load.forecast <- forecast(NYC.load.ts) 
+system.time(NYC.load.forecast <- forecast(NYC.load.ts))
 #  Plot forecast
 plot(NYC.load.forecast, main="Forecast of NYC load (MW)", xlim=c(170,175))
+
+
+############################
 
 #  Create a second load forecasting model using temperature as a regressor
 #  First convert both load and temp series into a ts object
@@ -135,14 +66,12 @@ plot(load)
 
 temp <- ts(NYC.temp.load$Temp.Faren, frequency = 7*24)
 
-?ts()
 
 plot(temp)
-load.forecast <- forecast(load)
+system.time(load.forecast <- forecast(load))
 plot(load.forecast)
 
 load.forecast2 <- forecast(load, xreg = temp)
-load.arima <- auto.arima(load)
 
 
 #  Use stl() to create seasonal decomposition of load time series:
